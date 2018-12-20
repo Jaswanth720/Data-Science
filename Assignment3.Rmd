@@ -1,0 +1,267 @@
+---
+title: "Assignment3"
+author: "Jaswanth Gade"
+date: "September 27, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+ Question 1. For this question you will be using the dplyr package to manipulate and clean up a dataset called msleep (mammals sleep) that is available on the course webpage (at
+https://scads.eecs.wsu.edu/wp-content/uploads/2017/10/msleep_ggplot2.csv). The dataset
+contains the sleep times and weights for a set of mammals. It has 83 rows and 11 variables. Here
+is a description of the variables:
+
+Load the data into R, and check the first few rows for abnormalities. You will likely notice
+several.
+
+
+```{r load}
+ysleep <- read.csv("https://scads.eecs.wsu.edu/wp-content/uploads/2017/10/msleep_ggplot2.csv")
+```
+Below are the tasks to perform. Use select() to print the head of the columns with a title
+including "sleep".
+``` {r libr}
+library(dplyr)
+```
+
+
+```{r sel}
+
+sleepData <- select(ysleep, name, sleep_total)
+head(sleepData)
+
+```
+
+
+1(a).Use filter() to count the number of animals which weigh over 50 kilograms and sleep more
+than 6 hours a day
+
+
+```{r fil}
+filter(ysleep, bodywt>50, sleep_total >6)
+```
+
+
+
+1(b).Use piping (%>%), select() and arrange() to print the name, order, sleep time and bodyweight of the animals with the top 6 sleep times, in order of sleep time. 
+
+```{r pipe}
+ysleep %>% 
+    select(name, order, sleep_total,bodywt) %>%
+    arrange(desc(sleep_total)) %>%
+    top_n(6,sleep_total)
+```
+
+
+1(c).Use mutate to add two new columns to the dataframe; wt_ratio with the ratio of brain size to
+body weight, rem_ratio with the ratio of rem sleep to sleep time. If you think they might be
+useful, feel free to extract more features than these, and describe what they are? 
+SOlution:
+```{r mutate}
+ysleep %>% 
+    mutate(wt_ratio = brainwt / bodywt , 
+           rem_ratio = sleep_rem/sleep_total,
+           total_time= sleep_total + awake)
+
+```
+
+I extracted an another column to check if the "sleep_total" and "awake" variable together make up to 24 hours.That is checking if the animal is in observation for 24 hours or not.This variable gives out the information of the time of which the mammal is in observatoin. This calculation is stored in the variable "Total_time".
+
+1(d).Use group_by() and summarize() to display the average, min and max sleep times for each order. Remember to use ungroup() when you are done. 
+
+```{r groupby}
+ysleep %>% 
+    group_by(order) %>%
+    summarise(avg_sleep = mean(sleep_total), 
+              min_sleep = min(sleep_total), 
+              max_sleep = max(sleep_total),
+              total = n())%>%
+ungroup()
+```
+
+1(e).Make a copy of your dataframe, and use group_by() and mutate() to impute the missing brain weights as the average wt_ratio for that animal's order times the animal's weight. Make a 
+second copy of your dataframe, but this time use group_by() and mutate() to impute missing
+brain weights with the average brain weight for that animal's order. What assumptions do
+these data filling methods make? Which is the best way to impute the data, or do you see a
+better way, and why? You may impute or remove other variables as you find appropriate.
+Briefly explain your decisions.
+Solution: Missing values which are imputed by the average brainwt of the same order mammals is more appropriate compared to the wt_ratio variable. Replacing the missing values with the same kind of feature valu by assuming their average is often a better choice compared to the wt_ratio variable.
+
+``` {r impute}
+xsleep = ysleep
+xsleep1 = xsleep %>%
+   group_by(order) %>% 
+   mutate( brainwt= ifelse(is.na(brainwt), ((mean(brainwt, na.rm  = TRUE)/mean(bodywt, na.rm = TRUE)) * bodywt),brainwt))
+ 
+  xsleep2 = xsleep %>%
+   group_by(order) %>%
+   mutate(brainwt= ifelse(is.na(brainwt),mean(brainwt, na.rm= TRUE), brainwt))
+
+
+```
+
+Question 2. For this question, you will first need to read section 12.6 in the R for Data Science
+book, here (http://r4ds.had.co.nz/tidy-data.htmlcase-study). Grab the dataset from the tidyr
+package, and tidy it as shown in the case study before answering the following questions. 
+
+```{r tidying}
+library(tidyr) 
+who <-tidyr::who 
+who1 <- who %>%
+gather(key, value, new_sp_m014:newrel_f65, na.rm = FALSE) %>%
+mutate(key = stringr::str_replace(key, "newrel", "new_rel")) 
+who1
+```
+2(a).Explain why this line
+mutate(key = stringr::str_replace(key, "newrel", "new_rel"))
+is necessary to properly tidy the data. What happens if you skip this line?}
+
+```{r newrel}
+who2 <- who1 %>% 
+  mutate(key = stringr::str_replace(key, "newrel", "new_rel"))
+who2
+```
+
+Solution: skipping this line would make it difficult to figure out the patients with the disease being relapsed. To gain a consistency in the data by making it easier to diiferentiate between the other factors.
+The variable newrel violates consistency, so it has been modified to follow a single pattern and also to maintain consistency among the data.
+new_sp= smear positive
+new_sn= smear negative
+new_ep= extrapulmonry
+new_rel= relapsed
+
+2(b). How many entries are removed from the dataset when you set na.rm to true in the gather
+command (in this dataset). How else could those NA values be handled? Among these
+options, which do you think is the best way to handle those missing values for this
+dataset, and why?}
+```{r count} 
+
+who1 <- who %>% 
+  gather(new_sp_m014:newrel_f65, key = "key", value = "cases", na.rm = TRUE)
+who1
+who1 %>% 
+  count(key)
+ncol(who)
+ncol(who1)
+```
+solution: There are total of 60 columns in "who" and 6 columns "who1". Here we removed 56 columns and there is an addition of 2 columns to who1 which makes the number of columns in who1 to 6.
+
+
+2(c). Explain the difference between an explicit and implicit missing value, in general. Can
+you find any implicit missing values in this dataset, if so where?
+
+Solution:
+```{r impli}
+sum(complete.cases(who))
+who[complete.cases(who),]
+```
+
+I cannot find any mnissing values as the complete function gives the output same as the number of rows in dataset.
+Also the code in the chunk returns value zero that says there are no implicit values.
+Explicit values (shown with the variables NA) or implicit values (not even present in the dataset).It is that a explicit value is the presence of an absence and an implicit value is the absence of a presence. The spread() function can turn implicit values explicit (year, return for columns) while the gather() function turns explicit values implicit. 
+Explicitly, i.e. flagged with NA.
+Implicitly, the absence of the data
+
+
+2(d). Looking at the features (country, year, var, sex, age, cases) in the tidied data, are they all appropriately typed? Are there any features you think would be better suited as a different
+type? Why or why not?}
+
+Solution:
+``` {r tidy}
+who3 <- who2 %>% 
+  separate(key, c("new", "type", "sexage"), sep = "_")
+who3
+who4 <- who3 %>% 
+  select(-new, -iso2, -iso3)
+  who5 <- who4 %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+who5
+```
+Almost all the features are apprpriately typed except the age. The "age" feature here is character type which can be modified to an integer type.
+
+2(e). Explain in your own words what a gather operation is, and give an example of a situation when it might be useful. Do the same for spread.}
+
+Solution:
+Gather()- Reshaping rows to columns
+
+Description: There are situations our data is considered unstacked and a common attribute is spread out across columns. To reform and keeping these common attributes gathered together into a single variable, the gather() function will take multiple columns and combine them into key-value pairs, forming duplicates of all other columns as needed.
+
+#EXAMPLE:            mpg cyl disp  hp drat    wt  qsec vs am gear carb
+#Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4
+#Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4
+#Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1
+#Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
+#Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
+#Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1
+
+#After gather
+
+#                car attribute value
+#1         Mazda RX4       mpg  21.0
+#2     Mazda RX4 Wag       mpg  21.0
+#3        Datsun 710       mpg  22.8
+#4    Hornet 4 Drive       mpg  21.4
+#5 Hornet Sportabout       mpg  18.7
+#6           Valiant       mpg  18.1
+
+Spread()- Reshaping columns to rows
+
+Description:  There are situations when we are required to turn long formatted data into wide formatted data. The spread() function spreads a key-value pair across multiple columns. 
+
+EXAMPLE:
+After Gather
+
+#0    country quarter growth
+#1        A q1_2017   0.03
+#2        B q1_2017   0.05
+#3        C q1_2017   0.01
+#4        A q2_2017   0.05
+#5        B q2_2017   0.07
+#6        C q2_2017   0.02
+#7        A q3_2017   0.04
+#8        B q3_2017   0.05
+#9        C q3_2017   0.01
+#10       A q4_2017   0.03
+#11       B q4_2017   0.02
+#12       C q4_2017   0.04
+
+
+After Spread
+
+#0   country q1_2017 q2_2017 q3_2017 q4_2017
+#1       A    0.03    0.05    0.04    0.03
+#2       B    0.05    0.07    0.05    0.02
+#3       C    0.01    0.02    0.01    0.04
+
+f) Generate an informative visualization, which shows something about the data. Give a
+brief description of what it shows, and why you thought it was interesting. 
+
+```{r visualisation}
+count(who5, sex)
+count(who5, type)
+count(who5, country)
+count(who5, country,type)
+hist(who5$year, col='steelblue',main='years',xlim = c(1995,2015),ylim=c(5000,20000), xlab='years')
+```
+In the above observations, i have taken the number of variables that are present in the dataset by using the count() function. The following variables are considered in the above chunk:
+
+1. The number of male and female persons that are effected. As seen, the count of male is slightly higher      than the female count. 
+
+2. The number of people that have gone through smear positive, smear negative, extrapulmonary, relapse. As 
+   we can observe in the table, the count of people that have smear positive is way higher than any            variable.
+
+3. In the next visualization, i have taken the count of country through which we can tell the number of        people that have gone through the effect from eaxh country. 
+
+4. In the fourth observation i have combined the 2nd and 3rd observations. I have shown you the count of the    people in each country with respect to the four types available.
+
+5. In the fifth observation that i have taken, i have plotted a histogram to the years and the total count     of cases. That is, here i have shown the total number of people around the world that are effected in       each year. As we can observe, the count of people effected is high in between the years 2010 to 2012.
+
+
+
+
+
+
+

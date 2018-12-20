@@ -1,0 +1,241 @@
+---
+title: "Assignmet 4"
+author: "Jaswanth"
+date: "October 9, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. This question involves the use of multiple linear regression on the Auto data set from the
+course webpage (https://scads.eecs.wsu.edu/index.php/datasets/). Ensure that you remove
+missing values from the dataframe, and that values are represented in the appropriate
+types (num or int for quantitative variables, factor, logi or str for qualitative).
+
+
+```{r readauto}
+
+auto <- read.csv("https://scads.eecs.wsu.edu/wp-content/uploads/2017/09/Auto.csv", na.strings="?")
+auto <- na.omit(auto)
+```
+
+ a. Produce a scatterplot matrix which includes all of the variables in the data set.
+ 
+```{r scatterplot}
+pairs(~mpg+cylinders+displacement+horsepower+acceleration+year+origin+name, data=auto,
+  	main="Three Cylinder Options")
+```
+
+b. Compute the matrix of correlations between the variables using the function cor().
+You will need to exclude the name variable, which is qualitative.
+```{r correlation}
+x <- auto[1:4]
+y <- auto[5:8]
+cor(x, y)
+
+```
+
+
+c. Use the lm() function to perform a multiple linear regression with mpg as the response and all other variables except name as the predictors. Use the summary() function to print the results. Comment on the output:
+
+```{r lmmm}
+
+fit <- lm(mpg ~ cylinders+displacement+horsepower+ weight + year + origin, data=auto)
+summary(fit)
+```
+
+Solution: There are some significant relationships between the response and predictors. Weight, year and origin are significant at 0.001 level. So the null hypothesis is rejected fot these predictors. For the cylinder variable null hypothesis cannot be rejected. And also the r squared value is very high which also implies a good fit.
+
+i. Which predictors appear to have a statistically significant relationship to the response, and how do you determine this?
+
+Solution: Asterisks in a regression table indicate the level of the statistical significance of a regression coefficient. 
+weight= (***),
+year= (***),
+origin= (***),
+horsepower= (*),
+displacement= (*),
+
+The asterisks in a regression table correspond with a legend at the bottom of the table. Weight,year and origin are at 0.001 level. Horsepower and displacement are at 0.5 level significanc and for rest of the variables we cannot reject the null hypothesis.
+
+
+
+ii. What does the coefficient for the cylinders variable suggest, in simple
+terms?
+
+Solution: The predictor variable accepts the null hypothesis and there is no significant relationship between the cylinder and response.
+
+d. Use the plot() function to produce diagnostic plots of the linear regression fit.
+Comment on any problems you see with the fit. Do the residual plots suggest any
+unusually large outliers? Does the leverage plot identify any observations with
+unusually high leverage?
+```{r plotlm}
+plot(fit)
+```
+
+Solution: 
+The Residuals vs Fitted graph does not seem no pattern, so it points no strong evidence of non-linearity.
+The Residuals vs Fitted graph assumes a bit of funnel shape, so it presents a bit of heteroscedasticity.
+Specifically the observation 14 is a highly leverage point as shown in Residuals vc Leverage graph.
+
+
+e. Use the * and : symbols to fit linear regression models with interaction effects. Do
+any interactions appear to be statistically significant?
+```{r symbols}
+symbol<-lm(mpg ~ cylinders+displacement+horsepower+ weight * year + origin, data=auto)
+symbol1<-lm(mpg ~ cylinders+displacement+horsepower+ weight + year * origin, data=auto)
+summary(symbol)
+summary(symbol1)
+```
+Solution: There are 2 computation which have significance with the response i.e weight* year and year*origin
+and have 0.001 and 0.01 level of significance respectively. The r squared valu is also high that means the distribution is close to line. 
+
+f. Try transformations of the variables with X3 and log(X). Comment on your
+findings.
+```{r variables}
+auto$mpgpower3=(auto$mpg)^3 
+auto$mpglog= log(auto$mpg)
+```
+Solution: If statistically significant variables are transformed then the new transformed variable is also significant.  It looks that the log transformation gives the most linear looking plot
+
+2. This problem involves the Boston data set, which we saw in the lab. We will now try to
+predict per capita crime rate using the other variables in this data set. In other words, per
+capita crime rate is the response, and the other variables are the predictors.
+```{r boston}
+library(MASS)
+data("Boston")
+```
+
+a. For each predictor, fit a simple linear regression model to predict the response.
+Include the code, but not the output for all models in your solution. In which of
+the models is there a statistically significant association between the predictor and
+the response? Considering the meaning of each variable, discuss the relationship
+between crim and nox, chas, medv and dis in particular. How do these
+relationships differ?
+```{r percapita} 
+
+library(corrplot)
+B <- cor(Boston)
+corrplot(B, method='circle')
+```
+
+```{r allpredict}
+percap13 <- lm(crim~ zn, data=Boston)
+percap1 <- lm(crim~ indus, data=Boston)
+percap2 <- lm(crim~ chas, data=Boston)
+percap3 <- lm(crim~ nox, data=Boston)
+percap4 <- lm(crim~ rm, data=Boston)
+percap5 <- lm(crim~ age, data=Boston)
+percap6 <- lm(crim~ dis, data=Boston)
+percap7 <- lm(crim~ rad, data=Boston)
+percap8 <- lm(crim~ tax, data=Boston)
+percap9 <- lm(crim~ ptratio, data=Boston)
+percap10 <- lm(crim~black , data=Boston)
+percap11 <- lm(crim~ lstat, data=Boston)
+percap12 <- lm(crim~ medv, data=Boston)
+
+
+```
+
+
+Solution: All the predictors have a significant relationship except the chas variable. nox,medv,dis all the predictors have r squared value which is close to 0.2 that means the points are not very close to the line. But these predictors are significant with crim.  
+
+b. Fit a multiple regression model to predict the response using all of the predictors.
+Describe your results. For which predictors can we reject the null hypothesis H0 :
+??j = 0?
+```{r multi}
+percap <- lm(crim~.-crim, data=Boston)
+summary(percap)
+```
+Solution: dis,rad,medv,zn,black are staitistically significant in this regression model. For all the rest of the predictors we now fail to reject the null hypothesis.
+we can reject null hypothesis for the following predictors:
+dis
+rad
+medv
+zn
+black
+
+c. How do your results from (a) compare to your results from (b)? Create a plot
+displaying the univariate regression coefficients from (a) on the x-axis, and the
+multiple regression coefficients from (b) on the y-axis. That is, each predictor is
+displayed as a single point in the plot. Its coefficient in a simple linear regression
+model is shown on the x-axis, and its coefficient estimate in the multiple linear
+regression model is shown on the y-axis. What does this plot tell you about the
+various predictors? 
+```{r graph}
+uni <- lm(crim ~ zn, data = Boston)$coefficients[2]
+uni <- append(uni, lm(crim ~ indus, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ chas, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ nox, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ rm, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ age, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ dis, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ rad, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ tax, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ ptratio, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ black, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ lstat, data = Boston)$coefficients[2])
+uni <- append(uni, lm(crim ~ medv, data = Boston)$coefficients[2])
+percap$coefficients[2:14]
+
+plot(uni, percap$coefficients[2:14], main = 'Univariate vs. Multiple Regression Coefficient', xlab = 'Univariate', ylab = 'Multiple',col = c('green','red'))
+```
+
+Solution: There is a difference between the simple and multiple regression coefficients. This is due to  that in the simple regression case, the slope term represents the average effect of an increase in the predictor, ignoring the other predictors in the table.If it is the multiple regression case, the slope term represents the average effect of an increase in the predictor, while keeping the  predictors as constant.So in some cases there is a significant relationship between the predictor and the response in simple linear regression but that is not the case in multiple linear regression 
+
+
+
+d. Is there evidence of non-linear association between any of the predictors and the
+response? To answer this question, for each predictor X, fit a model of the form
+Y = ??0 + ??1X + ??2X2 + ??3X3
++ ??
+Hint: use the poly() function. Again, include the code, but not the output for each
+model in your solution, and instead describe any non-linear trends you uncover. 
+```{r powers}
+x1 <- lm(crim ~ medv + I(medv^2) + I(medv^3), data = Boston)
+x2 <- lm(crim ~ zn + I(zn^2) + I(zn^3), data = Boston)
+x3 <- lm(crim ~ rad + I(rad^2) + I(rad^3), data = Boston)
+x4 <- lm(crim ~ dis + I(dis^2) + I(dis^3), data = Boston)
+x5 <- lm(crim ~ indus + I(indus^2) + I(indus^3), data = Boston)
+x6 <- lm(crim ~ chas + I(chas^2) + I(chas^3), data = Boston)
+x7 <- lm(crim ~ nox + I(nox^2) + I(nox^3), data = Boston)
+x8 <- lm(crim ~ rm + I(rm^2) + I(rm^3), data = Boston)
+x9 <- lm(crim ~ tax + I(tax^2) + I(tax^3), data = Boston)
+x10 <- lm(crim ~ ptratio + I(ptratio^2) + I(ptratio^3), data = Boston)
+x11 <- lm(crim ~ black + I(black^2) + I(black^3), data = Boston)
+x12 <- lm(crim ~ lstat + I(lstat^2) + I(lstat^3), data = Boston)
+
+```
+Solution:
+For chas variable, we obtain NA values for the squared and cubed values. This makes it clear that as chas is a dummy variable, composed of only 0s and 1s, and these values will not change if they are squared or cubed.
+
+The other variables indus, nox, dis, ptracio, and medv, there is possibilty of a non-linear relationship, as each of these variables squared and cubed terms are statistically signficant that means here we have to reject the null hypothesis. 
+
+Age also has a non-linear relationship as once squared-age and cubed-age are computed, linear age becomes statistically insignficant.
+
+
+
+3. An important assumption of the linear regression model is that the error terms are
+uncorrelated (independent). But error terms can sometimes be correlated, especially in
+time-series data.
+a. What are the issues that could arise in using linear regression (via least squares
+estimates) when error terms are correlated? Comment in particular with respect to
+i) regression coefficients
+ii) the standard error of regression coefficients
+iii) confidence intervals
+
+Solution:
+Standard errors which are calculated for the estimated regression coefficients 
+are on the basis of assuming the uncorrelated error terms. But if there exist
+a correlation among the error terms, then the estimated standard errors
+will underestimate the true standard errors. If this happens then the confidence
+intervals will become narrow than they should have been. For
+example, a higher confidence interval may in reality have a much lower probability
+than what it tends to have of containing the true value of the parameter. If the error terms are correlated, we may have of confidence in our model which is more than it has to be.
+
+b. What methods can be applied to deal with correlated errors? Mention at least one
+method?
+
+Solution:
+Generalized least squares(Gls) and linear mixded effect models(Lme) methods are used manipulate data and handle the correlation betweene the errors.

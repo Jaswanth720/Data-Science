@@ -1,0 +1,153 @@
+---
+title: "assignment 5"
+author: "Jaswanth"
+date: "October 18, 2018"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r import}
+require(jsonlite)
+require(dplyr)
+
+api <- 'https://content.guardianapis.com/search?'
+key = '93b0733b-9573-433e-a85b-539b79b19b15'
+
+sections <- c('travel', 'food', 'technology', 'business', 'sport', 'politics')
+fields <- 'body'
+pagesize <- '50'
+pages <- 20
+
+results <- data.frame()
+
+# View(api) 
+
+for(section in sections){
+  print(section)
+  for(i in 1:20){
+    link <- paste(api,'api-key=', key,'&section=', section, '&show-fields=', fields, '&page-size=', pagesize, '&page=',i , sep="" )
+    json <-fromJSON(link)
+    # View(json)
+    data <- as.data.frame(json$response$results, flatten = TRUE)
+    set <- as.data.frame(json$response$results$fields$body, flatten = TRUE)
+    data = subset(data, select = -c(fields))
+    res <- cbind(data, set)
+    results <- rbind(results, res)
+ 
+  }
+}
+```
+
+```{r}
+library(dplyr)
+library(corpus)
+library(tm)
+library(SnowballC)
+
+mix = results[sample(nrow(results)),]
+#View(mix)
+
+colnames(mix)[12] <- "thebody"
+#tant <- as.factor(res$thebody)
+```
+
+
+```{r}
+mix$thebody <- gsub("<.*?>", "",mix$thebody)
+mix$thebody <- gsub("[[:punct:]]", "",mix$thebody)
+mix$thebody <- gsub("[[:digit:]]", "",mix$thebody)
+mix$thebody <- gsub("http[[:alnum:][:punct:]]*", "",mix$thebody)
+mix$thebody <- tolower(mix$thebody)
+mix$thebody <- removeWords(mix$thebody,stopwords())
+library(tokenizers)
+library(stopwords)
+body = mix$thebody 
+token = tokenize_word_stems(body, stopwords = stopwords::stopwords("en"))
+corpus_body = Corpus(VectorSource(token))
+dtm <- DocumentTermMatrix(corpus_body)
+inspect(dtm)
+```
+
+```{r naive}
+
+
+df.train <- mix[1:4800,]
+df.test <- mix[4801:6000,]
+
+dtm.train <- dtm[1:4800,]
+dtm.test <- dtm[4801:6000,]
+
+
+
+cleandata.train <- corpus_body[1:4800]
+cleandata.train
+cleandata.test <- corpus_body[4801:6000]
+```
+
+```{r}
+fivefreq <- findFreqTerms(dtm.train, 5)
+length((fivefreq))
+
+
+
+dtm.train.nb <- DocumentTermMatrix(cleandata.train, control=list(dictionary = fivefreq))
+dtm.test.nb <- DocumentTermMatrix(cleandata.test, control=list(dictionary = fivefreq))
+# dim(dtm.test.nb)
+```
+
+
+
+
+
+
+```{r naive2}
+library(caret)
+library(e1071)
+convert_count <- function(x) {
+  
+  x = ifelse(x>0, "Yes","No")
+
+}
+
+trainNB <- apply(dtm.train.nb, 2, convert_count)
+testNB <- apply(dtm.test.nb, 2, convert_count)
+```
+
+
+
+
+```{r nave}
+library(Matrix)
+
+df.train$sectionId <- as.factor(df.train$sectionId)
+df.test$sectionId = as.factor(df.test$sectionId)
+
+classifier <- naiveBayes(trainNB, df.train$sectionId, laplace = 1) 
+
+pred <- predict(classifier, newdata=testNB) 
+
+table("Predictions"= pred,  "Actual" = df.test$sectionId)
+```
+
+
+```{r}
+df.test$sectionId = as.factor(df.test$sectionId)
+conf.mat <- confusionMatrix(pred, df.test$sectionId)
+
+conf.mat
+
+
+
+
+
+
+conf.mat$overall['Accuracy']
+```
