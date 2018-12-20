@@ -1,0 +1,302 @@
+---
+title: "assign2sol"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1(a). Use the read.csv() function to read the data into R. Call the loaded data college. Make
+sure that you have the directory set to the correct location for the data
+```{r read}
+college <- read.csv("https://scads.eecs.wsu.edu/wp-content/uploads/2017/09/College.csv")
+```
+
+1(b). Look at the data using the fix() function. You should notice that the first column is
+just the name of each university. We don't really want R to treat this as data. However, it may be
+```{r rownames}
+rownames (college)= college[,1]
+fix(college)
+```
+However, we still need to eliminate the first
+column in the data where the names are stored. Try
+```{r eliminate}
+ college =college [,-1]
+ fix(college)
+```
+1(c).i. Use the summary() function to produce a numerical summary of the variables in the
+data set. (Respond to this question with the mean graduation rate included in the
+summary result).
+```{r summary}
+ summary(college)
+```
+ii. Use the pairs() function to produce a scatterplot matrix of the first ten columns or
+variables of the data. Recall that you can reference the first ten columns of a matrix A
+using A[,1:10].
+```{r pairs}
+ pairs(college[,1:10])
+```
+iii. Use the plot() function to produce side-by-side boxplots of Outstate versus Private.
+
+```{r plot}
+ plot(x=college$Private, y=college$Outstate,
+      main="side by side boxplot of Outstate versus private",
+      xlab="Outstate",
+      ylab="Private") 
+
+boxplot(Outstate ~ Private,
+        data = college,
+        xlab = "Private",
+        ylab = "Outstate",
+        main = "Outstate vs private")
+```
+
+iv. Create a new qualitative variable, called Top, by binning the Top25perc variable. We
+are going to divide universities into two groups based on whether or not the proportion of
+students coming from the top 25% of their high school classes exceeds 50%.
+```{r Top}
+Top=rep("No",nrow(college ))
+ Top[college$Top25perc >50]=" Yes"
+   Top=as.factor(Top)
+ college=data.frame(college, Top)
+
+```
+ Use the summary() function to see how many top universities there are. 
+```{r TOPsummary}
+summary(Top)
+```
+ 
+ Now use the plot() or boxplot() function to produce side-by-side boxplots of Outstate with respect to the two Top categories (Yes and No). Ensure that this figure has an appropriate title and
+axis labels. 
+```{r boxplot}
+boxplot(Outstate ~ Top, data = college, xlab = "Top",
+    ylab = "Outstate", 
+     main = "Outstate vs Top",
+    notch = TRUE, 
+    varwidth = TRUE, 
+    col = c("green","yellow"),
+    names = c("Yes","No"))
+```
+v. Use the hist() function to produce some histograms with differing numbers of bins for
+a few of the quantitative variables. You may find the command par(mfrow=c(2,2))
+useful: it will divide the print window into four regions so that four plots can be made
+simultaneously. Modifying the arguments to this function will divide the screen in other
+ways. Again, ensure that this figure has an appropriate title and axis labels.
+auto
+```{r hist}
+par(mfrow=c(2,2))
+Enroll<- college$Enroll
+Books<- college$Books
+Personal<- college$Personal
+Accept<- college$Accept
+hist(Accept, xlab = "Accept",col = "red",border = "green")
+hist(Personal, xlab = "Personal",col = "yellow",border = "White")
+hist(Books, xlab = "Books",col = "green",border = "black")
+hist(Enroll, xlab = "Enroll",col = "Purple",border = "blue")
+```
+
+vi. Continue exploring the data, and provide a brief summary of what you discover. You
+may use additional plots or numerical descriptors as needed. Feel free to think outside
+the box on this one but if you want something to point you in the right direction, look at
+the summary statistics for various features, and think about what they tell you. Perhaps
+try plotting various features from the dataset against each other and see if any patterns
+emerge. 
+
+Solution: After plotting different possible combination of graphs. we can relate some                 variable such as mentioned below:
+          (1.) The variables F.Undergrad and Enroll has almost a linear relationship. i.e if           the variable enroll increases there will also be a increase in F.Undergrad.
+          (2.)The variables F.Undergrad and Accept has almost a linear relationship. i.e if           the variable Accept increases there will also be a increase in F.Undergrad.
+          (3.) Variables Apps and Accept have almost a linear relationship.In other words they both are directly proportional in  nature.
+
+```{r collegebrief }
+plot(x = college$F.Undergrad,
+     y = college$Enroll ,
+     xlim= c(100, 2000),
+     ylim= c(00,1000),
+     xlab = "F.Undergrad", 
+     ylab = "enroll",
+     main ="F.undergrad vs Enroll",
+     col = c("green","red"))
+
+lines(smooth.spline(college$F.Undergrad,college$Enroll),lwd=3)
+
+
+plot(x = college$F.Undergrad,
+     y = college$Accept ,
+     xlim=c(0,2000),
+     ylim=c(0,1000), 
+     xlab ="F.Undergrad", 
+     ylab = "Accept",
+     main = "F.Undergrad Vs Accept", 
+     col = c("green","red"))
+lines(smooth.spline(college$F.Undergrad,college$Accept),lwd=3)
+
+plot(x = college$Apps,
+      y = college$Accept ,
+      xlim=c(0,2000),
+      ylim=c(0,1500), 
+      xlab ="Apps", 
+      ylab = "Accept",
+      main = "Apps Vs Accept", 
+      col = c("green","red"))
+ lines(smooth.spline(college$Apps,college$Accept),lwd=3)
+```
+
+2. This exercise involves the Auto.csv data set found on the course website. Make sure that the
+missing values have been removed from the data. To do this, consider the na.strings parameter of
+read.csv(), as well as the na.omit() function.
+
+```{r readauto}
+
+auto <- read.csv("https://scads.eecs.wsu.edu/wp-content/uploads/2017/09/Auto.csv", na.strings="?")
+   auto <- na.omit(auto)
+ 
+```
+
+
+
+
+
+(a) Which of the predictors are quantitative, and which are qualitative?
+
+Solution: Quantitaive=cylinders,weight || Qualitative=mpg,displacement, horsepower,year,origin,name
+                  
+                      
+                              
+(b) What is the range of each quantitative predictor? You can answer this using the
+range() function. Hint: consider using R's sapply() function to take the range of multiple features in a single function call.
+```{r sapply}
+sapply((list(auto$mpg, 
+             auto$cylinders,
+             auto$displacement, 
+             auto$horsepower, 
+             auto$weight, 
+             auto$acceleration,
+             auto$year, 
+             auto$origin)), 
+       range)
+
+ 
+```
+
+
+
+(c) What is the mean and standard deviation of each quantitative predictor?
+```{r meananddauto}
+ sapply((list(auto$mpg, 
+              auto$cylinders,
+              auto$displacement, 
+              auto$horsepower, 
+              auto$weight, 
+              auto$acceleration, 
+              auto$year, 
+              auto$origin)), 
+        mean)
+ 
+
+sapply((list(auto$mpg, 
+             auto$cylinders,
+             auto$displacement, 
+             auto$horsepower, 
+             auto$weight, 
+             auto$acceleration, 
+             auto$year, 
+             auto$origin)), 
+       sd) 
+
+```
+
+
+
+(d) Now remove the 25th through 75th observations. What is the range, mean, and
+standard deviation of each predictor in the subset of the data that remains?
+```{r newauto}
+  newauto <- auto[-c(25:75), ] 
+ View(newauto)
+ 
+ sapply((list(newauto$mpg, 
+              newauto$cylinders,
+              newauto$displacement, 
+              newauto$horsepower,
+              newauto$weight, 
+              newauto$acceleration,
+              newauto$year, 
+              newauto$origin)), 
+        range)
+ 
+ sapply((list(newauto$mpg, 
+              newauto$cylinders,
+              newauto$displacement, 
+              newauto$horsepower, 
+              newauto$weight,
+              newauto$acceleration, 
+              newauto$year, 
+              newauto$origin)),
+        mean)
+ 
+ sapply((list(newauto$mpg, 
+              newauto$cylinders,
+              newauto$displacement, 
+              newauto$horsepower,
+              newauto$weight, 
+              newauto$acceleration, 
+              newauto$year, 
+              newauto$origin)), 
+        sd)
+```
+
+
+(e) Using the full data set, investigate the predictors graphically, using scatterplots or
+other tools of your choice. Create some plots highlighting the relationships among the predictors.
+Comment on your findings.
+
+Solution: (1.) In the accelaration Vs. Mileage graph the relationship here is different. The variable mpg goes high only in a certain interval of acceleration. The variable mpg performs better from interval of accelaration x=(15,20). (2.) The graph between cylinders and horsepower depict that if the variable cylinder increases the variable horsepower goes high in performance.
+
+
+```{r predict}
+
+
+  plot(x = auto$acceleration,
+       y = auto$mpg, 
+       xlab = "accelaration",
+       ylab = "mpg",
+       main = "accelaration vs Mileage",
+       col = c("green","red"))
+   lines(smooth.spline(auto$acceleration, auto$mpg),lwd=3)
+
+plot(x = auto$cylinders,
+     y = auto$horsepower,
+     xlab = "cylinders",
+     ylab = "horsepower",
+     main = "cylinders vs horsepower",
+     col = c("green","red"))
+ 
+```
+
+
+(f) Suppose that we wish to predict gas mileage (mpg) on the basis of the other variables.
+Do your plots suggest that any of the other variables might be useful in predicting mpg? Justify
+your answer.
+
+Solution: (1.) The plot between weight and mpg depicts that relationship is inversely proportional. Variable mpg is inversely proportional to weight variable in the given data. So a prediction of mpg can be made if weight variable is given. (2.) The graph between mpg and horsepower exhibit that the relationship is inversely proportional. That means if the variable horsepower increases then mpg variable goes down and the vice versa.The variable mpg is predictable if values of horsepower is given.
+```{r mpg}
+
+
+  plot(x = auto$weight,
+       y = auto$mpg,
+       xlab = "Weight",
+       ylab = "Milage",
+       main = "weight vs Mileage",
+       col = c("green","red"))
+  lines(smooth.spline(auto$weight, auto$mpg),lwd=3)
+
+
+
+plot(x = auto$horsepower,
+     y = auto$mpg,
+     xlab = "horsepower", 
+     ylab = "mpg",
+     main = "horsepower vs Mileage",
+     col = c("green","red"))
+
+```
